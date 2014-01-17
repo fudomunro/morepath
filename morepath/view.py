@@ -48,7 +48,23 @@ def render_json(content):
     return response
 
 
+class RenderTemplate(object):
+    def __init__(self, template_path):
+        self.template_path = template_path
+
+    def __call__(self, content):
+        # have to do this here as have to wait for config to load
+        if self.template is None:
+            # XXX is compilation thread safe?
+            self.template = self.compile_template(self.template_path)
+        rendered = self.template(content)
+        return render_html(rendered)
+
+
 def render_html(content):
     response = Response(content)
     response.content_type = 'text/html'
     return response
+
+def compile_template():
+    pass

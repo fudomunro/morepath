@@ -270,7 +270,7 @@ class JsonDirective(ViewDirective):
 
 @directive('html')
 class HtmlDirective(ViewDirective):
-    def __init__(self, app, model, name='', render=None,
+    def __init__(self, app, model, name='', template=None,
                  permission=None, **predicates):
         """Register HTML view.
 
@@ -283,15 +283,19 @@ class HtmlDirective(ViewDirective):
         :param model: the class of the model for which this view is registered.
         :param name: the name of the view as it appears in the URL. If omitted,
           it is the empty string, meaning the default view for the model.
-        :param render: an optional function that can render the output of the
-          view function to a response, and possibly set headers such as
-          ``Content-Type``, etc. Renders as HTML by default.
+        :param template: path to the template used to render the HTML. If None,
+          no template is used and the function is expected to return
+          a :class:`morepath.Response` object itself, or a string that
+          can be turned into one.
         :param permission: a permission class. The model should have this
           permission, otherwise access to this view is forbidden. If omitted,
           the view function is public.
         :param predicates: predicates to match this view on.
         """
-        render = render or render_html
+        if self.template is not None:
+            render = RenderTemplate(template)
+        else:
+            render = render_html
         super(HtmlDirective, self).__init__(app, model, name, render,
                                             permission, **predicates)
 
