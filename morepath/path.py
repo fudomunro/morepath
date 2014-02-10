@@ -93,13 +93,16 @@ def get_variables_func(arguments, exclude):
     return lambda model: { name: getattr(model, name) for
                            name in names}
 
+def get_traject(app):
+    result = app.traject
+    if result is None:
+        result = Traject()
+        app.traject = result
+    return result
 
 def register_path(app, model, path, variables, converters, required,
                   model_factory, arguments=None):
-    traject = app.traject
-    if traject is None:
-        traject = Traject()
-        app.traject = traject
+    traject = get_traject(app)
 
     converters = converters or {}
     if arguments is None:
@@ -131,10 +134,7 @@ def register_path(app, model, path, variables, converters, required,
 
 def register_subpath(app, model, path, variables, converters, required,
                      base, get_base, model_factory):
-    traject = app.traject
-    if traject is None:
-        traject = Traject()
-        app.traject = traject
+    traject = get_traject(app)
 
     (base_path, base_variables, base_converters, base_required,
      base_factory) = traject.get_basepath(base)
