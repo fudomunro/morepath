@@ -169,6 +169,7 @@ class Traject(object):
         # for that this would get it automatically.
         self._root = Node()
         self._inverse = Registry()
+        self._bases = {}
 
     def add_pattern(self, path, value, converters=None):
         node = self._root
@@ -181,6 +182,14 @@ class Traject(object):
                 raise TrajectError("Duplicate variables")
             known_variables.update(variables)
         node.value = value
+
+    def add_basepath(self, model, path, variables, converters, required,
+                     model_factory):
+        self._bases[model] = (path, variables, converters, required,
+                              model_factory)
+
+    def get_basepath(self, model):
+        return self._bases.get(model)
 
     def inverse(self, model_class, path, get_variables, converters,
                 parameter_names):

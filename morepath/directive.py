@@ -6,7 +6,7 @@ from .view import (register_view, render_json, render_html,
                    get_predicates_with_defaults)
 from .security import (register_permission_checker,
                        Identity, NoIdentity)
-from .path import register_path, register_mount
+from .path import register_path, register_subpath, register_mount
 from .traject import Path
 from reg import KeyIndex
 from .request import Request, Response
@@ -130,6 +130,80 @@ class PathDirective(Directive):
         register_path(app, self.model, self.path,
                       self.variables, self.converters, self.required,
                       obj)
+
+
+@directive('subpath')
+class SubPathDirective(Directive):
+    depends = [ConverterDirective, PathDirective]
+
+    def __init__(self, app,  path, model=None,
+                 variables=None, converters=None, required=None,
+                 base=None, get_base=None):
+        """Register a model for a sub path.
+
+        Decorate a function or a class (constructor). The function
+        should return an instance of the model class, for instance by
+        querying it from the database, or ``None`` if the model does
+        not exist.
+
+        The decorated function will get as arguments any variables
+        specified in the path as well as URL parameters.
+
+        If you declare a ``request`` parameter the function will be
+        able to use that information too.
+
+        :param path: the route for which the model is registered.
+        :param model: the class of the model that the decorated function
+          should return. If the directive is used on a class instead of a
+          function, the model should not be provided.
+        :param variables: a function that given a model object can construct
+          the variables used in the path (including any URL parameters).
+          If omitted, variables are retrieved from the model by using
+          the arguments of the decorated function.
+        :param converters: a dictionary containing converters for variables.
+          The key is the variable name, the value is a
+          :class:`morepath.Converter` instance.
+        :param required: list or set of names of those URL parameters which
+           should be required, i.e. if missing a 400 Bad Request response will
+           be given. Any default value is ignored. Has no effect on path
+           variables. Optional.
+        """
+        super(SubPathDirective, self).__init__(app)
+        self.model = model
+        self.path = path
+        self.variables = variables
+        self.converters = converters
+        self.required = required
+        self.base = base
+        self.get_base = get_base
+
+    # XXX configuration clash with path
+    def identifier(self, app):
+        # XXX get path from base in app and add to self.path
+        return ('path', Path(self.path).discriminator())
+
+    def discriminators(self, app):
+        return [('model', self.model)]
+
+    def prepare(self, obj):
+        # XXX make sure base and get_base are required
+        model = self.model
+        if isinstance(obj, type):
+            if model is not None:
+                raise ConfigError(
+                    "@path decorates class so cannot "
+                    "have explicit model: %s" % model)
+            model = obj
+        if model is None:
+            raise ConfigError(
+                "@path does not decorate class and has no explicit model")
+        yield self.clone(model=model), obj
+
+    def perform(self, app, obj):
+        register_subpath(app, self.model, self.path,
+                         self.variables, self.converters, self.required,
+                         self.base, self.get_base,
+                         obj)
 
 
 @directive('permission')
