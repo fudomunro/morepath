@@ -186,7 +186,7 @@ def register_subpath(app, model, path, variables, converters, required,
                                          sub_converters, sub_required)
 
     register_traject(app, model, sub_path, sub_variables, sub_converters,
-                     sub_required, sub_model_factory, parameters,
+                     sub_required, sub_model_factory, sub_parameters,
                      parameter_factory)
 
 

@@ -149,7 +149,56 @@ def test_subpath_converters():
     response = c.get('/2/1/link')
     assert response.data == '/2/1'
 
-# converters, required
+
+def test_subpath_url_parameters():
+    config = setup()
+    app = morepath.App(testing_config=config)
+
+    class Container(object):
+        def __init__(self, container_id, a):
+            self.container_id = container_id
+            self.a = a
+
+    class Item(object):
+        def __init__(self, parent, id, b):
+            self.parent = parent
+            self.id = id
+            self.b = b
+
+    @app.path(model=Container, path='{container_id}')
+    def get_container(container_id, a):
+        return Container(container_id, a)
+
+    @app.subpath(model=Item, path='{id}', base=Container,
+                 get_base=lambda m: m.parent)
+    def get_item(base, id, b):
+        return Item(base, id, b)
+
+    @app.view(model=Item)
+    def default(self, request):
+        return "a: %s b: %s" % (self.parent.a, self.b)
+
+    @app.view(model=Item, name='link')
+    def link(self, request):
+        return request.link(self)
+
+    config.commit()
+
+    c = Client(app, Response)
+
+    response = c.get('/A/a?a=foo&b=bar')
+    assert response.data == 'a: foo b: bar'
+
+    response = c.get('/A/a')
+    assert response.data == 'a: None b: None'
+
+    response = c.get('/A/a/link?a=foo&b=bar')
+    assert response.data == '/A/a?a=foo&b=bar'
+
+    response = c.get('/A/a/link')
+    assert response.data == '/A/a'
+
+# required
 
 # URL parameters combined
 
