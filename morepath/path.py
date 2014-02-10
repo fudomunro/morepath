@@ -120,24 +120,29 @@ def register_path(app, model, path, variables, converters, required,
     if variables is None:
         variables = get_variables_func(arguments, app.mount_variables())
 
+    register_traject(app, model, path, variables, converters, required,
+                     model_factory, parameters, parameter_factory)
+
+def register_traject(app, model, path, variables, converters, required,
+                     model_factory, parameters, parameter_factory):
+    traject = get_traject(app)
     traject.add_pattern(path, (model_factory, parameter_factory),
                         converters)
     traject.inverse(model, path, variables, converters, list(parameters.keys()))
     traject.add_basepath(model, path, variables, converters, required,
-                         model_factory)
+                         model_factory, parameters)
 
     def get_app(model):
         return app
 
     app.register(generic.app, [model], get_app)
 
-
 def register_subpath(app, model, path, variables, converters, required,
                      base, get_base, model_factory):
     traject = get_traject(app)
 
     (base_path, base_variables, base_converters, base_required,
-     base_factory) = traject.get_basepath(base)
+     base_factory, base_parameters) = traject.get_basepath(base)
     if base_path.endswith('/'):
         base_path = base_path[:-1]
     sub_path = base_path + '/' + path
@@ -160,6 +165,13 @@ def register_subpath(app, model, path, variables, converters, required,
     sub_converters = base_converters.copy()
     sub_converters.update(converters)
 
+    exclude = Path(path).variables()
+    exclude.update(app.mount_variables())
+    exclude.update(Path(base_path).variables())
+    parameters = get_url_parameters(arguments, exclude)
+    sub_parameters = base_parameters.copy()
+    sub_parameters.update(parameters)
+
     if required is None:
         required = set()
     required = set(required)
@@ -167,11 +179,16 @@ def register_subpath(app, model, path, variables, converters, required,
     sub_required = base_required | required
 
     def sub_model_factory(**kw):
-        base_obj = mapply(base_factory, **kw)
-        return mapply(model_factory, *[base_obj], **kw)
+        kw['base'] = mapply(base_factory, **kw)
+        return mapply(model_factory, **kw)
 
-    register_path(app, model, sub_path, sub_variables, sub_converters,
-                  sub_required, sub_model_factory)
+    parameter_factory = ParameterFactory(sub_parameters,
+                                         sub_converters, sub_required)
+
+    register_traject(app, model, sub_path, sub_variables, sub_converters,
+                     sub_required, sub_model_factory, parameters,
+                     parameter_factory)
+
 
 def register_mount(base_app, app, path, required, context_factory):
     # specific class as we want a different one for each mount

@@ -184,9 +184,9 @@ class Traject(object):
         node.value = value
 
     def add_basepath(self, model, path, variables, converters, required,
-                     model_factory):
+                     model_factory, parameters):
         self._bases[model] = (path, variables, converters, required,
-                              model_factory)
+                              model_factory, parameters)
 
     def get_basepath(self, model):
         return self._bases.get(model)
