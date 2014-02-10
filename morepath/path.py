@@ -153,9 +153,18 @@ def register_subpath(app, model, path, variables, converters, required,
         result.update(variables(m))
         return result
 
-    # XXX
-    sub_converters = {}
-    sub_required = set()
+    converters = converters or {}
+    converters = get_converters(arguments, converters,
+                                app.converter_for_type, app.converter_for_value)
+
+    sub_converters = base_converters.copy()
+    sub_converters.update(converters)
+
+    if required is None:
+        required = set()
+    required = set(required)
+
+    sub_required = base_required | required
 
     def sub_model_factory(**kw):
         base_obj = mapply(base_factory, **kw)
