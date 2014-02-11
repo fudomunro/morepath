@@ -1,6 +1,6 @@
 from .app import global_app
 from .config import Config
-from .path import Mount
+from .path import Mount, NO_BASE
 import morepath.directive
 from morepath import generic
 from .app import AppBase
@@ -61,7 +61,13 @@ def app_path(model, lookup):
     if app is None:
         raise LinkError()
     traject = generic.traject(app, lookup=lookup)
-    return traject.path(model)
+    base = generic.base(model, lookup=lookup)
+    return traject.path(base, model)
+
+
+@global_app.function(generic.base, object)
+def fallback_base(model, lookup):
+    return NO_BASE
 
 
 @global_app.function(generic.link, Request, object, object)

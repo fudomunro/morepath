@@ -5,6 +5,8 @@ from werkzeug.exceptions import BadRequest
 from .converter import IDENTITY_CONVERTER
 from .error import TrajectError
 from reg import mapply
+from reg.mapping import InverseMap, ClassMapKey
+
 
 IDENTIFIER = re.compile(r'^[^\d\W]\w*$')
 PATH_VARIABLE = re.compile(r'\{([^}]*)\}')
@@ -212,12 +214,14 @@ class Traject(object):
         # automatically
         self._root = Node()
         self._inverse = Registry()
+        self._basepath = InverseMap()
 
-    def register(self, reg):
+    def register(self, base_class, reg):
         self.add_pattern(reg.path, (reg.model_factory,
                                     reg.parameter_factory),
                          reg.converters)
-        self.inverse(reg.model, reg.path, reg.variables, reg.converters,
+        self.inverse(base_class,
+                     reg.model, reg.path, reg.variables, reg.converters,
                      list(reg.parameters.keys()))
         self.add_basepath(reg)
 
@@ -234,18 +238,18 @@ class Traject(object):
         node.value = value
 
     def add_basepath(self, reg):
-        self._inverse.register('basepath', [reg.model], reg)
+        self._basepath.register(ClassMapKey(reg.model), reg)
 
-    def get_basepath(self, model):
-        # XXX caching, better API
-        return self._inverse.registry.get('basepath', [model])
+    def get_basepaths(self, model):
+        for reg in self._basepath.all(ClassMapKey(model)):
+            yield reg
 
-    def inverse(self, model_class, path, get_variables, converters,
+    def inverse(self, base_class, model_class, path, get_variables, converters,
                 parameter_names):
         # XXX should we do checking for duplicate variables here too?
         path = Path(path)
         self._inverse.register('inverse',
-                               [model_class],
+                               [base_class, model_class],
                                (path.interpolation_str(), get_variables,
                                 converters, parameter_names))
 
@@ -266,14 +270,14 @@ class Traject(object):
             variables.update(new_variables)
         return node.value, stack, variables
 
-    def path(self, model):
+    def path(self, base, model):
         path, get_variables, converters, parameter_names = self._inverse.component(
-            'inverse', [model])
+            'inverse', [base, model])
         all_variables = get_variables(model)
         assert isinstance(all_variables, dict)
         variables = {
             name: converters.get(name, IDENTITY_CONVERTER).encode(value) for
-            name, value in all_variables.items() 
+            name, value in all_variables.items()
             if name not in parameter_names }
         parameters = {
             name: converters.get(name, IDENTITY_CONVERTER).encode(value) for

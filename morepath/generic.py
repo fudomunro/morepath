@@ -41,6 +41,13 @@ def path(model):
 
 
 @reg.generic
+def base(model):
+    """Get the base model instance for a model.
+    """
+    raise NotImplementedError
+
+
+@reg.generic
 def link(request, model):
     """Create a link (URL) to a model, including any mounted applications.
     """

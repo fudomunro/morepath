@@ -248,7 +248,6 @@ def test_subpath_url_parameters_converter():
     assert response.data == '/A/a?a=0&b=0'
 
 
-@pytest.mark.xfail
 def test_subpath_multiple_base():
     config = setup()
     app = morepath.App(testing_config=config)
@@ -281,9 +280,11 @@ def test_subpath_multiple_base():
     def get_item(base, id):
         return Item(base, id)
 
+
     @app.view(model=Item)
     def default(self, request):
-        return "Item %s for parent %s" % (self.id, self.parent.container_id)
+        return "Item %s for parent %s %r" % (self.id, self.parent.container_id,
+                                             type(self.parent))
 
     @app.view(model=Item, name='link')
     def link(self, request):
@@ -294,13 +295,20 @@ def test_subpath_multiple_base():
     c = Client(app, Response)
 
     response = c.get('a/T/t')
-    assert response.data == 'Item t for parent T'
+    assert response.data == (
+        "Item t for parent T "
+        "<class 'morepath.tests.test_subpath_directive.ContainerA'>")
 
     response = c.get('b/T/t')
-    assert response.data == 'Item t for parent T'
+    assert response.data == (
+        "Item t for parent T "
+        "<class 'morepath.tests.test_subpath_directive.ContainerB'>")
 
     response = c.get('a/T/t/link')
-    assert response.data == 'a/T/t'
+    assert response.data == '/a/T/t'
+
+    response = c.get('b/T/t/link')
+    assert response.data == '/b/T/t'
 
 # required
 

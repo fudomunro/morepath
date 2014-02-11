@@ -2,6 +2,7 @@ from morepath.traject import (Traject, Node, Step, TrajectError,
                               is_identifier, parse_variables,
                               Path, parse_path, create_path,
                               ParameterFactory)
+from morepath.path import NoBase, NO_BASE
 from morepath import generic
 from morepath.app import App
 from morepath.core import traject_consume
@@ -646,10 +647,10 @@ def test_path_for_model():
         def __init__(self, id):
             self.id = id
 
-    traject.inverse(IdModel, 'foo/{id}',
+    traject.inverse(NoBase, IdModel, 'foo/{id}',
                     lambda model: {'id': model.id},
                     {}, [])
-    assert traject.path(IdModel('a')) == ('foo/a', {})
+    assert traject.path(NO_BASE, IdModel('a')) == ('foo/a', {})
 
 
 def test_path_for_model_with_converter():
@@ -659,10 +660,10 @@ def test_path_for_model_with_converter():
         def __init__(self, id):
             self.id = id
 
-    traject.inverse(IdModel, 'foo/{id}',
+    traject.inverse(NoBase, IdModel, 'foo/{id}',
                     lambda model: {'id': model.id},
                     dict(id=Converter(int)), [])
-    assert traject.path(IdModel(1)) == ('foo/1', {})
+    assert traject.path(NO_BASE, IdModel(1)) == ('foo/1', {})
 
 
 def test_path_discriminator():

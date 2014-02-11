@@ -45,6 +45,13 @@ class Mount(object):
         return factory(**context)
 
 
+class NoBase(object):
+    pass
+
+
+NO_BASE = NoBase()
+
+
 def get_arguments(callable, exclude):
     """Get dictionary with arguments and their default value.
 
@@ -129,36 +136,26 @@ def get_registration(app, model, path, variables, converters, required,
 
 def register_path(app, model, path, variables, converters, required,
                   model_factory, arguments=None):
-    register_traject(app, get_registration(
+    register_traject(app, NoBase, get_registration(
         app, model, path, variables, converters, required,
         model_factory, arguments))
-
-
-def register_traject(app, reg):
-    traject = get_traject(app)
-    traject.register(reg)
-
-    def get_app(model):
-        return app
-
-    app.register(generic.app, [reg.model], get_app)
 
 
 def register_subpath(app, model, path, variables, converters, required,
                      base, get_base, model_factory):
     traject = get_traject(app)
 
-    # XXX look up all base paths that match base
-    # need to register using InverseMap probably
-    base_reg = traject.get_basepath(base)
+    # XXX should really generate multiple sub directives in prepare
+    for base_reg in traject.get_basepaths(base):
+        sub_reg = get_registration(
+            app, model, path, variables, converters,
+            required, model_factory,
+            exclude_variables=set(['base']),
+            exclude_parameters=Path(base_reg.path).variables())
+        register_traject(app, base_reg.model,
+                         base_reg.combine(sub_reg, get_base))
 
-    sub_reg = get_registration(
-        app, model, path, variables, converters,
-        required, model_factory,
-        exclude_variables=set(['base']),
-        exclude_parameters=Path(base_reg.path).variables())
-
-    register_traject(app, base_reg.combine(sub_reg, get_base))
+    app.register(generic.base, [model], get_base)
 
 
 def register_mount(base_app, app, path, required, context_factory):
@@ -173,5 +170,16 @@ def register_mount(base_app, app, path, required, context_factory):
     register_mounted(base_app, app, SpecificMount)
 
 
+def register_traject(app, base_class, reg):
+    traject = get_traject(app)
+    traject.register(base_class, reg)
+
+    def get_app(model):
+        return app
+
+    app.register(generic.app, [reg.model], get_app)
+
+
 def register_mounted(base_app, app, model_factory):
     base_app._mounted[app] = model_factory
+
