@@ -1,5 +1,5 @@
 from morepath import generic
-from morepath.traject import Traject, ParameterFactory, Path
+from morepath.traject import Traject, ParameterFactory, Path, Registration
 from morepath.publish import publish
 from morepath.error import DirectiveError
 
@@ -126,11 +126,9 @@ def register_path(app, model, path, variables, converters, required,
 def register_traject(app, model, path, variables, converters, required,
                      model_factory, parameters, parameter_factory):
     traject = get_traject(app)
-    traject.add_pattern(path, (model_factory, parameter_factory),
-                        converters)
-    traject.inverse(model, path, variables, converters, list(parameters.keys()))
-    traject.add_basepath(model, path, variables, converters, required,
-                         model_factory, parameters)
+    traject.register(Registration(
+        model, path, variables, converters, required, parameters,
+        model_factory))
 
     def get_app(model):
         return app
@@ -141,10 +139,13 @@ def register_subpath(app, model, path, variables, converters, required,
                      base, get_base, model_factory):
     traject = get_traject(app)
 
-    (base_path, base_variables, base_converters, base_required,
-     base_factory, base_parameters) = traject.get_basepath(base)
-    if base_path.endswith('/'):
+    # XXX look up all base paths that match base
+    # need to register using InverseMap probably
+    reg = traject.get_basepath(base)
+    if reg.path.endswith('/'):
         base_path = base_path[:-1]
+    else:
+        base_path = reg.path
     sub_path = base_path + '/' + path
 
     arguments = get_arguments(model_factory, SPECIAL_ARGUMENTS)
@@ -154,7 +155,7 @@ def register_subpath(app, model, path, variables, converters, required,
                                        set(['base']))
 
     def sub_variables(m):
-        result = base_variables(get_base(m))
+        result = reg.variables(get_base(m))
         result.update(variables(m))
         return result
 
@@ -162,24 +163,24 @@ def register_subpath(app, model, path, variables, converters, required,
     converters = get_converters(arguments, converters,
                                 app.converter_for_type, app.converter_for_value)
 
-    sub_converters = base_converters.copy()
+    sub_converters = reg.converters.copy()
     sub_converters.update(converters)
 
     exclude = Path(path).variables()
     exclude.update(app.mount_variables())
     exclude.update(Path(base_path).variables())
     parameters = get_url_parameters(arguments, exclude)
-    sub_parameters = base_parameters.copy()
+    sub_parameters = reg.parameters.copy()
     sub_parameters.update(parameters)
 
     if required is None:
         required = set()
     required = set(required)
 
-    sub_required = base_required | required
+    sub_required = reg.required | required
 
     def sub_model_factory(**kw):
-        kw['base'] = mapply(base_factory, **kw)
+        kw['base'] = mapply(reg.model_factory, **kw)
         return mapply(model_factory, **kw)
 
     parameter_factory = ParameterFactory(sub_parameters,

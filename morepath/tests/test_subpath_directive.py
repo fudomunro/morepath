@@ -247,6 +247,61 @@ def test_subpath_url_parameters_converter():
     response = c.get('/A/a/link')
     assert response.data == '/A/a?a=0&b=0'
 
+
+@pytest.mark.xfail
+def test_subpath_multiple_base():
+    config = setup()
+    app = morepath.App(testing_config=config)
+
+    class Container(object):
+        def __init__(self, container_id):
+            self.container_id = container_id
+
+    class ContainerA(Container):
+        pass
+
+    class ContainerB(Container):
+        pass
+
+    class Item(object):
+        def __init__(self, parent, id):
+            self.parent = parent
+            self.id = id
+
+    @app.path(model=ContainerA, path='a/{container_id}')
+    def get_container(container_id):
+        return ContainerA(container_id)
+
+    @app.path(model=ContainerB, path='b/{container_id}')
+    def get_container(container_id):
+        return ContainerB(container_id)
+
+    @app.subpath(model=Item, path='{id}', base=Container,
+                 get_base=lambda m: m.parent)
+    def get_item(base, id):
+        return Item(base, id)
+
+    @app.view(model=Item)
+    def default(self, request):
+        return "Item %s for parent %s" % (self.id, self.parent.container_id)
+
+    @app.view(model=Item, name='link')
+    def link(self, request):
+        return request.link(self)
+
+    config.commit()
+
+    c = Client(app, Response)
+
+    response = c.get('a/T/t')
+    assert response.data == 'Item t for parent T'
+
+    response = c.get('b/T/t')
+    assert response.data == 'Item t for parent T'
+
+    response = c.get('a/T/t/link')
+    assert response.data == 'a/T/t'
+
 # required
 
 # what if base variable same as sub variable? should be error

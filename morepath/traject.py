@@ -5,6 +5,7 @@ from werkzeug.exceptions import BadRequest
 from .converter import IDENTITY_CONVERTER
 from .error import TrajectError
 
+
 IDENTIFIER = re.compile(r'^[^\d\W]\w*$')
 PATH_VARIABLE = re.compile(r'\{([^}]*)\}')
 VARIABLE = '{}'
@@ -160,16 +161,36 @@ class Path(object):
         return set(result)
 
 
+class Registration(object):
+    def __init__(self, model, path, variables, converters, required,
+                 parameters, model_factory):
+        self.model = model
+        self.path = path
+        self.variables = variables
+        self.converters = converters
+        self.required = required
+        self.parameters = parameters
+        self.parameter_factory = ParameterFactory(
+            parameters, converters, required)
+        self.model_factory = model_factory
+
 class Traject(object):
     def __init__(self):
         super(Traject, self).__init__()
         # XXX caching is not enabled
         # also could this really be registering things in the main
-        # application registry instead? if it did and we solve caching
-        # for that this would get it automatically.
+        # application registry instead? if it did we'd get caching
+        # automatically
         self._root = Node()
         self._inverse = Registry()
-        self._bases = {}
+
+    def register(self, reg):
+        self.add_pattern(reg.path, (reg.model_factory,
+                                    reg.parameter_factory),
+                         reg.converters)
+        self.inverse(reg.model, reg.path, reg.variables, reg.converters,
+                     list(reg.parameters.keys()))
+        self.add_basepath(reg)
 
     def add_pattern(self, path, value, converters=None):
         node = self._root
@@ -183,13 +204,12 @@ class Traject(object):
             known_variables.update(variables)
         node.value = value
 
-    def add_basepath(self, model, path, variables, converters, required,
-                     model_factory, parameters):
-        self._bases[model] = (path, variables, converters, required,
-                              model_factory, parameters)
+    def add_basepath(self, reg):
+        self._inverse.register('basepath', [reg.model], reg)
 
     def get_basepath(self, model):
-        return self._bases.get(model)
+        # XXX caching, better API
+        return self._inverse.registry.get('basepath', [model])
 
     def inverse(self, model_class, path, get_variables, converters,
                 parameter_names):
