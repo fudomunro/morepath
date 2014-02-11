@@ -198,6 +198,9 @@ def test_subpath_url_parameters():
     response = c.get('/A/a/link')
     assert response.data == '/A/a'
 
+    response = c.get('A/a?base=blah')
+    assert response.data == 'a: None b: None'
+
 
 def test_subpath_url_parameters_converter():
     config = setup()
@@ -311,6 +314,44 @@ def test_subpath_multiple_base():
     assert response.data == '/b/T/t'
 
 
+def test_subpath_subclass_so_not_found():
+    config = setup()
+    app = morepath.App(testing_config=config)
+
+    class Container(object):
+        def __init__(self, container_id):
+            self.container_id = container_id
+
+    class ContainerA(Container):
+        pass
+
+    class Item(object):
+        def __init__(self, parent, id):
+            self.parent = parent
+            self.id = id
+
+    @app.path(model=Container, path='a/{container_id}')
+    def get_container(container_id):
+        return Container(container_id)
+
+    @app.subpath(model=Item, path='{id}', base=ContainerA,
+                 get_base=lambda m: m.parent)
+    def get_item(base, id):
+        return Item(base, id)
+
+    @app.view(model=Item)
+    def default(self, request):
+        return "Item %s for parent %s %r" % (self.id, self.parent.container_id,
+                                             type(self.parent))
+
+    config.commit()
+
+    c = Client(app, Response)
+
+    response = c.get('a/T/t')
+    assert response.status == '404 NOT FOUND'
+
+
 def test_subpath_url_parameters_required():
     config = setup()
     app = morepath.App(testing_config=config)
@@ -359,10 +400,6 @@ def test_subpath_url_parameters_required():
 # what if base variable same as sub variable? should be error
 
 # what if container cannot be found, i.e get_base returns None
-
-# what if base class is subclass of path registered
-
-# variable 'base' is not a URL parameter
 
 # cannot make subpath of subpath (or can we?)
 
