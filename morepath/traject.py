@@ -4,7 +4,7 @@ from reg import Registry
 from werkzeug.exceptions import BadRequest
 from .converter import IDENTITY_CONVERTER
 from .error import TrajectError
-
+from reg import mapply
 
 IDENTIFIER = re.compile(r'^[^\d\W]\w*$')
 PATH_VARIABLE = re.compile(r'\{([^}]*)\}')
@@ -173,6 +173,33 @@ class Registration(object):
         self.parameter_factory = ParameterFactory(
             parameters, converters, required)
         self.model_factory = model_factory
+
+    def combine(self, reg, get_base):
+        base_path = self.path
+        if not base_path.endswith('/'):
+            base_path += '/'
+        sub_path = base_path + reg.path
+        def sub_variables(m):
+            result = self.variables(get_base(m))
+            result.update(reg.variables(m))
+            return result
+        sub_converters = self.converters.copy()
+        sub_converters.update(reg.converters)
+        sub_required = self.required | reg.required
+        sub_parameters = self.parameters.copy()
+        sub_parameters.update(reg.parameters)
+        def sub_model_factory(**kw):
+            kw['base'] = mapply(self.model_factory, **kw)
+            return mapply(reg.model_factory, **kw)
+        return Registration(
+            reg.model,
+            sub_path,
+            sub_variables,
+            sub_converters,
+            sub_required,
+            sub_parameters,
+            sub_model_factory
+            )
 
 class Traject(object):
     def __init__(self):

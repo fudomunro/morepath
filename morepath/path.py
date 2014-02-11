@@ -138,12 +138,7 @@ def register_subpath(app, model, path, variables, converters, required,
 
     # XXX look up all base paths that match base
     # need to register using InverseMap probably
-    reg = traject.get_basepath(base)
-    if reg.path.endswith('/'):
-        base_path = base_path[:-1]
-    else:
-        base_path = reg.path
-    sub_path = base_path + '/' + path
+    base_reg = traject.get_basepath(base)
 
     arguments = get_arguments(model_factory, SPECIAL_ARGUMENTS)
 
@@ -151,38 +146,23 @@ def register_subpath(app, model, path, variables, converters, required,
         variables = get_variables_func(arguments, app.mount_variables() |
                                        set(['base']))
 
-    def sub_variables(m):
-        result = reg.variables(get_base(m))
-        result.update(variables(m))
-        return result
-
     converters = converters or {}
     converters = get_converters(arguments, converters,
                                 app.converter_for_type, app.converter_for_value)
 
-    sub_converters = reg.converters.copy()
-    sub_converters.update(converters)
-
     exclude = Path(path).variables()
     exclude.update(app.mount_variables())
-    exclude.update(Path(base_path).variables())
+    exclude.update(Path(base_reg.path).variables())
     parameters = get_url_parameters(arguments, exclude)
-    sub_parameters = reg.parameters.copy()
-    sub_parameters.update(parameters)
 
     if required is None:
         required = set()
     required = set(required)
 
-    sub_required = reg.required | required
+    sub_reg = Registration(model, path, variables, converters, required,
+                           parameters, model_factory)
 
-    def sub_model_factory(**kw):
-        kw['base'] = mapply(reg.model_factory, **kw)
-        return mapply(model_factory, **kw)
-
-    register_traject(app, Registration(
-        model, sub_path, sub_variables, sub_converters, sub_required,
-        sub_parameters, sub_model_factory))
+    register_traject(app, base_reg.combine(sub_reg, get_base))
 
 
 def register_mount(base_app, app, path, required, context_factory):
