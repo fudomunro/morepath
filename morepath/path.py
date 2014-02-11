@@ -120,20 +120,18 @@ def register_path(app, model, path, variables, converters, required,
     if variables is None:
         variables = get_variables_func(arguments, app.mount_variables())
 
-    register_traject(app, model, path, variables, converters, required,
-                     model_factory, parameters, parameter_factory)
-
-def register_traject(app, model, path, variables, converters, required,
-                     model_factory, parameters, parameter_factory):
-    traject = get_traject(app)
-    traject.register(Registration(
+    register_traject(app, Registration(
         model, path, variables, converters, required, parameters,
         model_factory))
+
+def register_traject(app, reg):
+    traject = get_traject(app)
+    traject.register(reg)
 
     def get_app(model):
         return app
 
-    app.register(generic.app, [model], get_app)
+    app.register(generic.app, [reg.model], get_app)
 
 def register_subpath(app, model, path, variables, converters, required,
                      base, get_base, model_factory):
@@ -186,9 +184,9 @@ def register_subpath(app, model, path, variables, converters, required,
     parameter_factory = ParameterFactory(sub_parameters,
                                          sub_converters, sub_required)
 
-    register_traject(app, model, sub_path, sub_variables, sub_converters,
-                     sub_required, sub_model_factory, sub_parameters,
-                     parameter_factory)
+    register_traject(app, Registration(
+        model, sub_path, sub_variables, sub_converters, sub_required,
+        sub_parameters, sub_model_factory))
 
 
 def register_mount(base_app, app, path, required, context_factory):
