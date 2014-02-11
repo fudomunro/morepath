@@ -100,10 +100,8 @@ def get_traject(app):
         app.traject = result
     return result
 
-def register_path(app, model, path, variables, converters, required,
-                  model_factory, arguments=None):
-    traject = get_traject(app)
-
+def get_registration(app, model, path, variables, converters, required,
+                     model_factory, arguments=None):
     converters = converters or {}
     if arguments is None:
         arguments = get_arguments(model_factory, SPECIAL_ARGUMENTS)
@@ -119,9 +117,14 @@ def register_path(app, model, path, variables, converters, required,
     if variables is None:
         variables = get_variables_func(arguments, app.mount_variables())
 
-    register_traject(app, Registration(
-        model, path, variables, converters, required, parameters,
-        model_factory))
+    return Registration(model, path, variables, converters, required,
+                        parameters, model_factory)
+
+def register_path(app, model, path, variables, converters, required,
+                  model_factory, arguments=None):
+    register_traject(app, get_registration(
+        app, model, path, variables, converters, required,
+        model_factory, arguments))
 
 def register_traject(app, reg):
     traject = get_traject(app)
