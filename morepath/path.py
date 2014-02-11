@@ -102,20 +102,23 @@ def get_traject(app):
 
 def get_registration(app, model, path, variables, converters, required,
                      model_factory, arguments=None):
-    converters = converters or {}
     if arguments is None:
         arguments = get_arguments(model_factory, SPECIAL_ARGUMENTS)
+
+    if variables is None:
+        variables = get_variables_func(arguments, app.mount_variables())
+
+    converters = converters or {}
     converters = get_converters(arguments, converters,
                                 app.converter_for_type, app.converter_for_value)
-    exclude = Path(path).variables()
-    exclude.update(app.mount_variables())
-    parameters = get_url_parameters(arguments, exclude)
+
     if required is None:
         required = set()
     required = set(required)
 
-    if variables is None:
-        variables = get_variables_func(arguments, app.mount_variables())
+    exclude = Path(path).variables()
+    exclude.update(app.mount_variables())
+    parameters = get_url_parameters(arguments, exclude)
 
     return Registration(model, path, variables, converters, required,
                         parameters, model_factory)
