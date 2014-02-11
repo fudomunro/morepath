@@ -116,10 +116,6 @@ def get_registration(app, model, path, variables, converters, required,
     converters = get_converters(arguments, converters,
                                 app.converter_for_type, app.converter_for_value)
 
-    if required is None:
-        required = set()
-    required = set(required)
-
     exclude_parameters = exclude_parameters or set()
     exclude = Path(path).variables()
     exclude.update(exclude_parameters)

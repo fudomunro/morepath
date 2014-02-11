@@ -168,7 +168,9 @@ class Registration(object):
         self.path = path
         self.variables = variables
         self.converters = converters
-        self.required = required
+        if required is None:
+            required = set()
+        self.required = set(required)
         self.parameters = parameters
         self.parameter_factory = ParameterFactory(
             parameters, converters, required)
