@@ -115,7 +115,6 @@ def register_path(app, model, path, variables, converters, required,
     if required is None:
         required = set()
     required = set(required)
-    parameter_factory = ParameterFactory(parameters, converters, required)
 
     if variables is None:
         variables = get_variables_func(arguments, app.mount_variables())
@@ -180,9 +179,6 @@ def register_subpath(app, model, path, variables, converters, required,
     def sub_model_factory(**kw):
         kw['base'] = mapply(reg.model_factory, **kw)
         return mapply(model_factory, **kw)
-
-    parameter_factory = ParameterFactory(sub_parameters,
-                                         sub_converters, sub_required)
 
     register_traject(app, Registration(
         model, sub_path, sub_variables, sub_converters, sub_required,
