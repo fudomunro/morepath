@@ -1,7 +1,7 @@
 import morepath
 from morepath import setup
 from morepath.request import Response
-from morepath.error import DirectiveReportError
+from morepath.error import DirectiveReportError, ConflictError
 
 from werkzeug.test import Client
 import pytest
@@ -271,11 +271,11 @@ def test_subpath_multiple_base():
             self.id = id
 
     @app.path(model=ContainerA, path='a/{container_id}')
-    def get_container(container_id):
+    def get_container_a(container_id):
         return ContainerA(container_id)
 
     @app.path(model=ContainerB, path='b/{container_id}')
-    def get_container(container_id):
+    def get_container_b(container_id):
         return ContainerB(container_id)
 
     @app.subpath(model=Item, path='{id}', base=Container,
@@ -397,10 +397,98 @@ def test_subpath_url_parameters_required():
     response = c.get('/A/a?a=foo')
     assert response.status == '400 BAD REQUEST'
 
+
+def test_multiple_subpaths_not_conflicting():
+    config = setup()
+    app = morepath.App(testing_config=config)
+
+    class Container(object):
+        def __init__(self, container_id):
+            self.container_id = container_id
+
+    class ContainerA(Container):
+        pass
+
+    class ContainerB(Container):
+        pass
+
+    class Item(object):
+        def __init__(self, parent, id):
+            self.parent = parent
+            self.id = id
+
+    class ItemA(Item):
+        pass
+
+    class ItemB(Item):
+        pass
+
+    @app.path(model=ContainerA, path='a/{container_id}')
+    def get_container_a(container_id):
+        return ContainerA(container_id)
+
+    @app.path(model=ContainerB, path='b/{container_id}')
+    def get_container_b(container_id):
+        return ContainerB(container_id)
+
+    @app.subpath(model=ItemA, path='{id}', base=ContainerA,
+                 get_base=lambda m: m.parent)
+    def get_item(base, id):
+        return ItemA(base, id)
+
+    @app.subpath(model=ItemB, path='{id}', base=ContainerB,
+                 get_base=lambda m: m.parent)
+    def get_item(base, id):
+        return ItemB(base, id)
+
+    config.commit()
+
+
+# XXX this fails because the subpath action is in the same action group
+# as the path action so that path conflicts can be detected, *but* as
+# a result path actions are not executed before subpath actions, so in this
+# test there is no detection of the paths.
+# this whole situation should probably be rewritten to use sub directives
+# anyway, so that there are only path directives in the end
+@pytest.mark.xfail
+def test_subpath_conflict_with_path():
+    config = setup()
+    app = morepath.App(testing_config=config)
+
+    class Container(object):
+        def __init__(self, container_id):
+            self.container_id = container_id
+
+    class Item(object):
+        def __init__(self, parent, id):
+            self.parent = parent
+            self.id = id
+
+    class Model(object):
+        pass
+
+    @app.path(model=Container, path='{container_id}')
+    def get_container(container_id):
+        return Container(container_id)
+
+    @app.subpath(model=Item, path='{id}', base=Container,
+                 get_base=lambda m: m.parent)
+    def get_item(base, id):
+        return Item(base, id)
+
+    @app.path(model=Model, path='{container_id}/{id}')
+    def get_model(container_id, id):
+        return Model()
+
+    with pytest.raises(ConflictError):
+        config.commit()
+
 # what if base variable same as sub variable? should be error
 
 # what if container cannot be found, i.e get_base returns None
 
-# cannot make subpath of subpath (or can we?)
+# prepare get_base, base checks
+
+# cannot make subpath of subpath
 
 # conflict between subpath and path?

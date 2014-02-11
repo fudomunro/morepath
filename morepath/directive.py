@@ -133,7 +133,7 @@ class PathDirective(Directive):
 
 
 @directive('subpath')
-class SubPathDirective(Directive):
+class SubPathDirective(PathDirective):
     depends = [ConverterDirective, PathDirective]
 
     def __init__(self, app,  path, model=None,
@@ -152,38 +152,33 @@ class SubPathDirective(Directive):
         If you declare a ``request`` parameter the function will be
         able to use that information too.
 
-        :param path: the route for which the model is registered.
-        :param model: the class of the model that the decorated function
-          should return. If the directive is used on a class instead of a
-          function, the model should not be provided.
-        :param variables: a function that given a model object can construct
-          the variables used in the path (including any URL parameters).
-          If omitted, variables are retrieved from the model by using
-          the arguments of the decorated function.
-        :param converters: a dictionary containing converters for variables.
-          The key is the variable name, the value is a
-          :class:`morepath.Converter` instance.
-        :param required: list or set of names of those URL parameters which
-           should be required, i.e. if missing a 400 Bad Request response will
-           be given. Any default value is ignored. Has no effect on path
-           variables. Optional.
+        Parameters as in :meth:`AppBase.path`, with two additional
+        required parameters:
+
+        :param base: the class of the base model under which we want
+          to create the sub path.
+        :param get_base: a function that given a model instance will return
+          an instance of the base model.
         """
-        super(SubPathDirective, self).__init__(app)
-        self.model = model
-        self.path = path
-        self.variables = variables
-        self.converters = converters
-        self.required = required
+        super(SubPathDirective, self).__init__(app, path, model,
+                                               variables,
+                                               converters, required)
         self.base = base
         self.get_base = get_base
 
-    # XXX configuration clash with path
     def identifier(self, app):
         # XXX get path from base in app and add to self.path
-        return ('path', Path(self.path).discriminator())
+        return ('subpath', self.base, Path(self.path).discriminator())
 
     def discriminators(self, app):
-        return [('model', self.model)]
+        for reg in app.traject.get_basepaths(self.base):
+            base_path = reg.path
+            # XXX refactor this / logic somewhere
+            if not base_path.endswith('/'):
+                base_path += '/'
+            path = base_path + self.path
+            yield ('path', Path(path).discriminator())
+        yield ('model', self.model)
 
     def prepare(self, obj):
         # XXX make sure base and get_base are required
