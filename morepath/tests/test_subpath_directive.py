@@ -310,7 +310,51 @@ def test_subpath_multiple_base():
     response = c.get('b/T/t/link')
     assert response.data == '/b/T/t'
 
-# required
+
+def test_subpath_url_parameters_required():
+    config = setup()
+    app = morepath.App(testing_config=config)
+
+    class Container(object):
+        def __init__(self, container_id, a):
+            self.container_id = container_id
+            self.a = a
+
+    class Item(object):
+        def __init__(self, parent, id, b):
+            self.parent = parent
+            self.id = id
+            self.b = b
+
+    @app.path(model=Container, path='{container_id}', required=['a'])
+    def get_container(container_id, a):
+        return Container(container_id, a)
+
+    @app.subpath(model=Item, path='{id}', base=Container,
+                 get_base=lambda m: m.parent, required=['b'])
+    def get_item(base, id, b):
+        return Item(base, id, b)
+
+    @app.view(model=Item)
+    def default(self, request):
+        return "a: %s b: %s" % (self.parent.a, self.b)
+
+    @app.view(model=Item, name='link')
+    def link(self, request):
+        return request.link(self)
+
+    config.commit()
+
+    c = Client(app, Response)
+
+    response = c.get('/A/a?a=foo&b=bar')
+    assert response.data == 'a: foo b: bar'
+
+    response = c.get('/A/a?b=bar')
+    assert response.status == '400 BAD REQUEST'
+
+    response = c.get('/A/a?a=foo')
+    assert response.status == '400 BAD REQUEST'
 
 # what if base variable same as sub variable? should be error
 
@@ -319,3 +363,7 @@ def test_subpath_multiple_base():
 # what if base class is subclass of path registered
 
 # variable 'base' is not a URL parameter
+
+# cannot make subpath of subpath (or can we?)
+
+# conflict between subpath and path?
