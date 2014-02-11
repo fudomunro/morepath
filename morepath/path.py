@@ -100,14 +100,18 @@ def get_traject(app):
         app.traject = result
     return result
 
+
 def get_registration(app, model, path, variables, converters, required,
-                     model_factory, arguments=None):
+                     model_factory, arguments=None,
+                     exclude_variables=None, exclude_parameters=None):
     if arguments is None:
         arguments = get_arguments(model_factory, SPECIAL_ARGUMENTS)
 
+    exclude_variables = exclude_variables or set()
     if variables is None:
-        variables = get_variables_func(arguments, app.mount_variables())
-
+        variables = get_variables_func(
+            arguments,
+            app.mount_variables() | exclude_variables)
     converters = converters or {}
     converters = get_converters(arguments, converters,
                                 app.converter_for_type, app.converter_for_value)
@@ -116,18 +120,23 @@ def get_registration(app, model, path, variables, converters, required,
         required = set()
     required = set(required)
 
+    exclude_parameters = exclude_parameters or set()
     exclude = Path(path).variables()
+    exclude.update(exclude_parameters)
     exclude.update(app.mount_variables())
+    exclude.update(exclude_variables)
     parameters = get_url_parameters(arguments, exclude)
 
     return Registration(model, path, variables, converters, required,
                         parameters, model_factory)
+
 
 def register_path(app, model, path, variables, converters, required,
                   model_factory, arguments=None):
     register_traject(app, get_registration(
         app, model, path, variables, converters, required,
         model_factory, arguments))
+
 
 def register_traject(app, reg):
     traject = get_traject(app)
@@ -138,6 +147,7 @@ def register_traject(app, reg):
 
     app.register(generic.app, [reg.model], get_app)
 
+
 def register_subpath(app, model, path, variables, converters, required,
                      base, get_base, model_factory):
     traject = get_traject(app)
@@ -146,27 +156,11 @@ def register_subpath(app, model, path, variables, converters, required,
     # need to register using InverseMap probably
     base_reg = traject.get_basepath(base)
 
-    arguments = get_arguments(model_factory, SPECIAL_ARGUMENTS)
-
-    if variables is None:
-        variables = get_variables_func(arguments, app.mount_variables() |
-                                       set(['base']))
-
-    converters = converters or {}
-    converters = get_converters(arguments, converters,
-                                app.converter_for_type, app.converter_for_value)
-
-    exclude = Path(path).variables()
-    exclude.update(app.mount_variables())
-    exclude.update(Path(base_reg.path).variables())
-    parameters = get_url_parameters(arguments, exclude)
-
-    if required is None:
-        required = set()
-    required = set(required)
-
-    sub_reg = Registration(model, path, variables, converters, required,
-                           parameters, model_factory)
+    sub_reg = get_registration(
+        app, model, path, variables, converters,
+        required, model_factory,
+        exclude_variables=set(['base']),
+        exclude_parameters=Path(base_reg.path).variables())
 
     register_traject(app, base_reg.combine(sub_reg, get_base))
 

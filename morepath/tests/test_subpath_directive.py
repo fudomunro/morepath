@@ -309,3 +309,5 @@ def test_subpath_multiple_base():
 # what if container cannot be found, i.e get_base returns None
 
 # what if base class is subclass of path registered
+
+# variable 'base' is not a URL parameter

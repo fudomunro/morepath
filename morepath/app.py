@@ -52,7 +52,6 @@ class AppBase(Configurable, ClassRegistry, ConverterRegistry):
         self.traject = Traject()
         self._mounted = {}
         root_mount = None
-        self._variables = variables or set()
         if not variables:
             self._app_mount = self.mounted()
         else:
