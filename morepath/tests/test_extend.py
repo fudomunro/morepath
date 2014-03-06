@@ -29,12 +29,12 @@ def test_extends():
     config.commit()
 
     cl = Client(app)
-    response = cl.get('/users/foo')
+    response = cl.get('/users/foo/')
     assert response.body == 'User: foo'
     response = cl.get('/users/foo/edit', status=404)
 
     cl = Client(extending)
-    response = cl.get('/users/foo')
+    response = cl.get('/users/foo/')
     assert response.body == 'User: foo'
     response = cl.get('/users/foo/edit')
     assert response.body == 'Edit user: foo'
@@ -61,11 +61,11 @@ def test_overrides_view():
     config.commit()
 
     cl = Client(app)
-    response = cl.get('/users/foo')
+    response = cl.get('/users/foo/')
     assert response.body == 'User: foo'
 
     cl = Client(overriding)
-    response = cl.get('/users/foo')
+    response = cl.get('/users/foo/')
     assert response.body == 'USER: foo'
 
 
@@ -92,12 +92,12 @@ def test_overrides_model():
     config.commit()
 
     cl = Client(app)
-    response = cl.get('/users/foo')
+    response = cl.get('/users/foo/')
     assert response.body == 'User: foo'
-    response = cl.get('/users/bar')
+    response = cl.get('/users/bar/')
     assert response.body == 'User: bar'
 
     cl = Client(overriding)
-    response = cl.get('/users/foo', status=404)
-    response = cl.get('/users/bar')
+    response = cl.get('/users/foo/', status=404)
+    response = cl.get('/users/bar/')
     assert response.body == 'User: bar'

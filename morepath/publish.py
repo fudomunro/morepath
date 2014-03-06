@@ -1,10 +1,7 @@
 from morepath import generic
 from .mount import Mount
 from .traject import create_path
-from webob.exc import HTTPNotFound
-
-
-DEFAULT_NAME = u''
+from webob.exc import HTTPNotFound, HTTPFound
 
 
 class ResponseSentinel(object):
@@ -44,7 +41,9 @@ def resolve_model(request):
 
 def resolve_response(request, model):
     request.view_name = get_view_name(request.unconsumed)
-
+    # if default view, redirect to path with /
+    if not request.view_name and not request.endslash:
+        return HTTPFound(location=request.path_info + '/')
     response = generic.response(request, model, default=RESPONSE_SENTINEL,
                                 lookup=request.lookup)
     if response is RESPONSE_SENTINEL:
@@ -57,7 +56,7 @@ def get_view_name(stack):
     if unconsumed_amount > 1:
         raise HTTPNotFound()
     elif unconsumed_amount == 0:
-        return DEFAULT_NAME
+        return ''
     elif unconsumed_amount == 1:
         return stack[0].lstrip('+')
     assert False, ("Unconsumed stack: %s" %

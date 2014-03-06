@@ -50,11 +50,11 @@ def test_mount():
 
     c = Client(app)
 
-    response = c.get('/foo')
+    response = c.get('/foo/')
     assert response.body == 'The root'
 
     response = c.get('/foo/link')
-    assert response.body == '/foo'
+    assert response.body == '/foo/'
 
 
 def test_mount_empty_context():
@@ -82,11 +82,11 @@ def test_mount_empty_context():
 
     c = Client(app)
 
-    response = c.get('/foo')
+    response = c.get('/foo/')
     assert response.body == 'The root'
 
     response = c.get('/foo/link')
-    assert response.body == '/foo'
+    assert response.body == '/foo/'
 
 
 def test_mount_context():
@@ -114,9 +114,9 @@ def test_mount_context():
 
     c = Client(app)
 
-    response = c.get('/foo')
+    response = c.get('/foo/')
     assert response.body == 'The root for mount id: foo'
-    response = c.get('/bar')
+    response = c.get('/bar/')
     assert response.body == 'The root for mount id: bar'
 
 
@@ -146,9 +146,9 @@ def test_mount_context_parameters():
 
     c = Client(app)
 
-    response = c.get('/mounts?mount_id=1')
+    response = c.get('/mounts/?mount_id=1')
     assert response.body == 'The root for mount id: 1'
-    response = c.get('/mounts')
+    response = c.get('/mounts/')
     assert response.body == 'The root for mount id: 0'
 
 
@@ -180,11 +180,11 @@ def test_mount_context_parameters_empty_context():
 
     c = Client(app)
 
-    response = c.get('/foo')
+    response = c.get('/foo/')
     assert response.body == 'The root for mount id: default'
     # the URL parameter mount_id cannot interfere with the mounting
     # process
-    response = c.get('/bar?mount_id=blah')
+    response = c.get('/bar/?mount_id=blah')
     assert response.body == 'The root for mount id: default'
 
 
@@ -241,8 +241,8 @@ def test_mount_parent_link():
 
     c = Client(app)
 
-    response = c.get('/foo')
-    assert response.body == '/models/one'
+    response = c.get('/foo/')
+    assert response.body == '/models/one/'
 
 
 def test_mount_child_link():
@@ -277,7 +277,7 @@ def test_mount_child_link():
     c = Client(app)
 
     response = c.get('/')
-    assert response.body == '/foo/models/one'
+    assert response.body == '/foo/models/one/'
 
 
 def test_mount_child_link_unknown_app():
@@ -415,7 +415,7 @@ def test_mount_implict_converters():
 
     c = Client(app)
 
-    response = c.get('/1')
+    response = c.get('/1/')
     assert response.body == "The root for: 1 <type 'int'>"
 
 
@@ -445,5 +445,5 @@ def test_mount_explicit_converters():
 
     c = Client(app)
 
-    response = c.get('/1')
+    response = c.get('/1/')
     assert response.body == "The root for: 1 <type 'int'>"

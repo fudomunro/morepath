@@ -34,7 +34,7 @@ def test_view():
     register_view(app, Model, view, predicates=dict(name=''))
 
     model = Model()
-    result = resolve_response(app.request(get_environ(path='')), model)
+    result = resolve_response(app.request(get_environ(path='/')), model)
     assert result.body == 'View!'
 
 
@@ -55,8 +55,8 @@ def test_predicates():
 
     model = Model()
     assert resolve_response(
-        app.request(get_environ(path='')), model).body == 'all'
-    assert (resolve_response(app.request(get_environ(path='', method='POST')),
+        app.request(get_environ(path='/')), model).body == 'all'
+    assert (resolve_response(app.request(get_environ(path='/', method='POST')),
                              model).body == 'post')
 
 
@@ -65,7 +65,7 @@ def test_notfound():
     app = App(testing_config=config)
     config.commit()
 
-    request = app.request(get_environ(path=''))
+    request = app.request(get_environ(path='/'))
     request.mounts.append(app.mounted())
 
     with pytest.raises(HTTPNotFound):
@@ -98,7 +98,7 @@ def test_response_returned():
 
     register_view(app, Model, view)
     model = Model()
-    response = resolve_response(app.request(get_environ(path='')), model)
+    response = resolve_response(app.request(get_environ(path='/')), model)
     assert response.body == 'Hello world!'
 
 
@@ -112,7 +112,7 @@ def test_request_view():
 
     register_view(app, Model, view, render=render_json)
 
-    request = app.request(get_environ(path=''))
+    request = app.request(get_environ(path='/'))
     request.mounts = [app]  # XXX should do this centrally
 
     model = Model()
@@ -135,7 +135,7 @@ def test_request_view_with_predicates():
     register_view(app, Model, view, render=render_json,
                   predicates=dict(name='foo'))
 
-    request = app.request(get_environ(path=''))
+    request = app.request(get_environ(path='/'))
     request.mounts = [app]  # XXX should do this centrally
 
     model = Model()
@@ -145,7 +145,7 @@ def test_request_view_with_predicates():
     assert request.view(model, name='foo') == {'hey': 'hey'}
     # the predicate information in the request is ignored when we do a
     # manual view lookup using request.view
-    request = app.request(get_environ(path='foo'))
+    request = app.request(get_environ(path='/foo'))
     request.mounts = [app]  # XXX should do this centrally
     assert request.view(model) is None
 
@@ -160,7 +160,7 @@ def test_render_html():
 
     register_view(app, Model, view, render=render_html)
 
-    request = app.request(get_environ(path=''))
+    request = app.request(get_environ(path='/'))
     model = Model()
     response = resolve_response(request, model)
     assert response.body == '<p>Hello world!</p>'
@@ -178,7 +178,7 @@ def test_view_raises_http_error():
     register_path(app, Model, 'foo', None, None, None, Model)
     register_view(app, Model, view)
 
-    request = app.request(get_environ(path='foo'))
+    request = app.request(get_environ(path='/foo/'))
     request.mounts.append(app.mounted())
 
     with pytest.raises(HTTPBadRequest):
@@ -199,7 +199,7 @@ def test_view_after():
     register_view(app, Model, view, predicates=dict(name=''))
 
     model = Model()
-    result = resolve_response(app.request(get_environ(path='')), model)
+    result = resolve_response(app.request(get_environ(path='/')), model)
     assert result.body == 'View!'
     assert result.headers.get('Foo') == 'FOO'
 
@@ -219,7 +219,7 @@ def test_conditional_view_after():
     register_view(app, Model, view, predicates=dict(name=''))
 
     model = Model()
-    result = resolve_response(app.request(get_environ(path='')), model)
+    result = resolve_response(app.request(get_environ(path='/')), model)
     assert result.body == 'View!'
     assert result.headers.get('Foo') is None
 
@@ -239,6 +239,6 @@ def test_view_after_non_decorator():
     register_view(app, Model, view, predicates=dict(name=''))
 
     model = Model()
-    result = resolve_response(app.request(get_environ(path='')), model)
+    result = resolve_response(app.request(get_environ(path='/')), model)
     assert result.body == 'View!'
     assert result.headers.get('Foo') == 'FOO'

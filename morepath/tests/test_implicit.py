@@ -100,7 +100,7 @@ def test_implicit_function_mounted():
 
     c = Client(alpha)
 
-    response = c.get('/mounted/1')
+    response = c.get('/mounted/1/')
     assert response.body == 'View for 1, message: The real two'
 
     response = c.get('/')

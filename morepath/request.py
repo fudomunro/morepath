@@ -21,6 +21,10 @@ class Request(BaseRequest):
         self._after = []
 
     @reify
+    def endslash(self):
+        return self.path_info.endswith('/')
+
+    @reify
     def identity(self):
         """Self-proclaimed identity of the user.
 
@@ -92,8 +96,7 @@ class Request(BaseRequest):
         parts = []
         if path:
             parts.append(path)
-        if name:
-            parts.append(name)
+        parts.append(name)
         result = '/' + '/'.join(parts)
         if parameters:
             result += '?' + urllib.urlencode(parameters, True)

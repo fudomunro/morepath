@@ -40,7 +40,7 @@ def test_no_permission():
 
     c = Client(app)
 
-    c.get('/foo', status=401)
+    c.get('/foo/', status=401)
 
 
 def test_permission_directive():
@@ -85,9 +85,9 @@ def test_permission_directive():
 
     c = Client(app)
 
-    response = c.get('/foo')
+    response = c.get('/foo/')
     assert response.body == 'Model: foo'
-    response = c.get('/bar', status=401)
+    response = c.get('/bar/', status=401)
 
 
 def test_permission_directive_no_identity():
@@ -121,9 +121,9 @@ def test_permission_directive_no_identity():
 
     c = Client(app)
 
-    response = c.get('/foo')
+    response = c.get('/foo/')
     assert response.body == 'Model: foo'
-    response = c.get('/bar', status=401)
+    response = c.get('/bar/', status=401)
 
 
 def test_policy_action():
@@ -133,9 +133,9 @@ def test_policy_action():
 
     c = Client(identity_policy.app)
 
-    response = c.get('/foo')
+    response = c.get('/foo/')
     assert response.body == 'Model: foo'
-    response = c.get('/bar', status=401)
+    response = c.get('/bar/', status=401)
 
 
 def test_basic_auth_identity_policy():
@@ -170,13 +170,13 @@ def test_basic_auth_identity_policy():
 
     c = Client(app)
 
-    response = c.get('/foo', status=401)
+    response = c.get('/foo/', status=401)
 
     headers = {'Authorization': 'Basic ' + base64.b64encode('user:wrong')}
-    response = c.get('/foo', headers=headers, status=401)
+    response = c.get('/foo/', headers=headers, status=401)
 
     headers = {'Authorization': 'Basic ' + base64.b64encode('user:secret')}
-    response = c.get('/foo', headers=headers)
+    response = c.get('/foo/', headers=headers)
     assert response.body == 'Model: foo'
 
 
@@ -212,49 +212,49 @@ def test_basic_auth_identity_policy_errors():
 
     c = Client(app)
 
-    response = c.get('/foo', status=401)
+    response = c.get('/foo/', status=401)
 
     headers = {'Authorization': 'Something'}
-    response = c.get('/foo', headers=headers, status=401)
+    response = c.get('/foo/', headers=headers, status=401)
 
     headers = {'Authorization': 'Something other'}
-    response = c.get('/foo', headers=headers, status=401)
+    response = c.get('/foo/', headers=headers, status=401)
 
     headers = {'Authorization': 'Basic ' + 'nonsense'}
-    response = c.get('/foo', headers=headers, status=401)
+    response = c.get('/foo/', headers=headers, status=401)
 
     headers = {'Authorization': 'Basic ' + 'nonsense1'}
-    response = c.get('/foo', headers=headers, status=401)
+    response = c.get('/foo/', headers=headers, status=401)
 
     # fallback to utf8
     headers = {
         'Authorization': 'Basic ' + base64.b64encode(
             u'user:sëcret'.encode('utf8'))}
-    response = c.get('/foo', headers=headers)
+    response = c.get('/foo/', headers=headers)
     assert response.body == 'Model: foo'
 
     # fallback to latin1
     headers = {
         'Authorization': 'Basic ' + base64.b64encode(
             u'user:sëcret'.encode('latin1'))}
-    response = c.get('/foo', headers=headers)
+    response = c.get('/foo/', headers=headers)
     assert response.body == 'Model: foo'
 
     # unknown encoding
     headers = {
         'Authorization': 'Basic ' + base64.b64encode(
             u'user:sëcret'.encode('cp500'))}
-    response = c.get('/foo', headers=headers, status=401)
+    response = c.get('/foo/', headers=headers, status=401)
 
     headers = {
         'Authorization': 'Basic ' + base64.b64encode(
             u'usersëcret'.encode('utf8'))}
-    response = c.get('/foo', headers=headers, status=401)
+    response = c.get('/foo/', headers=headers, status=401)
 
     headers = {
         'Authorization': 'Basic ' + base64.b64encode(
             u'user:sëcret:'.encode('utf8'))}
-    response = c.get('/foo', headers=headers, status=401)
+    response = c.get('/foo/', headers=headers, status=401)
 
 
 def test_basic_auth_remember():
@@ -284,7 +284,7 @@ def test_basic_auth_remember():
 
     c = Client(app)
 
-    response = c.get('/foo', status=200)
+    response = c.get('/foo/', status=200)
     assert response.body == ''
 
 
@@ -313,7 +313,7 @@ def test_basic_auth_forget():
 
     c = Client(app)
 
-    response = c.get('/foo', status=200)
+    response = c.get('/foo/', status=200)
     assert response.body == ''
 
     assert sorted(response.headers.items()) == [
@@ -385,13 +385,13 @@ def test_cookie_identity_policy():
 
     c = Client(app, cookiejar=CookieJar())
 
-    response = c.get('/foo', status=401)
+    response = c.get('/foo/', status=401)
 
     response = c.get('/foo/log_in')
 
-    response = c.get('/foo', status=200)
+    response = c.get('/foo/', status=200)
     assert response.body == 'Model: foo'
 
     response = c.get('/foo/log_out')
 
-    response = c.get('/foo', status=401)
+    response = c.get('/foo/', status=401)

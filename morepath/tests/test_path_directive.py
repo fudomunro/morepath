@@ -35,11 +35,11 @@ def test_simple_path_one_step():
 
     c = Client(app)
 
-    response = c.get('/simple')
+    response = c.get('/simple/')
     assert response.body == 'View'
 
     response = c.get('/simple/link')
-    assert response.body == '/simple'
+    assert response.body == '/simple/'
 
 
 def test_simple_path_two_steps():
@@ -66,11 +66,11 @@ def test_simple_path_two_steps():
 
     c = Client(app)
 
-    response = c.get('/one/two')
+    response = c.get('/one/two/')
     assert response.body == 'View'
 
     response = c.get('/one/two/link')
-    assert response.body == '/one/two'
+    assert response.body == '/one/two/'
 
 
 def test_variable_path_one_step():
@@ -97,11 +97,11 @@ def test_variable_path_one_step():
 
     c = Client(app)
 
-    response = c.get('/foo')
+    response = c.get('/foo/')
     assert response.body == 'View: foo'
 
     response = c.get('/foo/link')
-    assert response.body == '/foo'
+    assert response.body == '/foo/'
 
 
 def test_variable_path_two_steps():
@@ -128,11 +128,11 @@ def test_variable_path_two_steps():
 
     c = Client(app)
 
-    response = c.get('/document/foo')
+    response = c.get('/document/foo/')
     assert response.body == 'View: foo'
 
     response = c.get('/document/foo/link')
-    assert response.body == '/document/foo'
+    assert response.body == '/document/foo/'
 
 
 def test_variable_path_two_variables():
@@ -160,11 +160,11 @@ def test_variable_path_two_variables():
 
     c = Client(app)
 
-    response = c.get('/foo-one')
+    response = c.get('/foo-one/')
     assert response.body == 'View: foo one'
 
     response = c.get('/foo-one/link')
-    assert response.body == '/foo-one'
+    assert response.body == '/foo-one/'
 
 
 def test_variable_path_explicit_converter():
@@ -192,11 +192,11 @@ def test_variable_path_explicit_converter():
 
     c = Client(app)
 
-    response = c.get('/1')
+    response = c.get('/1/')
     assert response.body == "View: 1 (<type 'int'>)"
 
     response = c.get('/1/link')
-    assert response.body == '/1'
+    assert response.body == '/1/'
 
     response = c.get('/broken', status=404)
 
@@ -225,11 +225,11 @@ def test_variable_path_implicit_converter():
 
     c = Client(app)
 
-    response = c.get('/1')
+    response = c.get('/1/')
     assert response.body == "View: 1 (<type 'int'>)"
 
     response = c.get('/1/link')
-    assert response.body == '/1'
+    assert response.body == '/1/'
 
     response = c.get('/broken', status=404)
 
@@ -259,11 +259,11 @@ def test_variable_path_explicit_trumps_implicit():
 
     c = Client(app)
 
-    response = c.get('/1')
+    response = c.get('/1/')
     assert response.body == "View: 1 (<type 'int'>)"
 
     response = c.get('/1/link')
-    assert response.body == '/1'
+    assert response.body == '/1/'
 
     response = c.get('/broken', status=404)
 
@@ -729,7 +729,7 @@ def test_path_and_url_parameter_converter():
     c = Client(app)
 
     response = c.get('/1/link')
-    assert response.body == '/1'
+    assert response.body == '/1/'
 
 
 def test_root_named_link():
@@ -777,3 +777,23 @@ def test_path_no_class_and_no_model_argument():
 
     with pytest.raises(ConfigError):
         config.commit()
+
+
+def test_redirect_default_view_to_slash():
+    config = setup()
+    app = morepath.App(testing_config=config)
+
+    @app.path(path='foo')
+    class Root(object):
+        pass
+
+    @app.view(model=Root)
+    def view(self, request):
+        return "Hello"
+
+    config.commit()
+
+    c = Client(app)
+    response = c.get('/foo', status=302)
+    assert response.status == '302 Found'
+    assert response.headers.get('Location') == 'http://localhost/foo/'

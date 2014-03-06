@@ -24,12 +24,12 @@ def test_basic():
 
     c = Client(basic.app)
 
-    response = c.get('/foo')
+    response = c.get('/foo/')
 
     assert response.body == 'The view for model: foo'
 
     response = c.get('/foo/link')
-    assert response.body == '/foo'
+    assert response.body == '/foo/'
 
 
 def test_basic_json():
@@ -68,12 +68,12 @@ def test_nested():
 
     c = Client(nested.outer_app)
 
-    response = c.get('/inner/foo')
+    response = c.get('/inner/foo/')
 
     assert response.body == 'The view for model: foo'
 
     response = c.get('/inner/foo/link')
-    assert response.body == '/inner/foo'
+    assert response.body == '/inner/foo/'
 
 
 def test_abbr():
@@ -83,7 +83,7 @@ def test_abbr():
 
     c = Client(abbr.app)
 
-    response = c.get('/foo')
+    response = c.get('/foo/')
     assert response.body == 'Default view: foo'
 
     response = c.get('/foo/edit')
@@ -103,7 +103,7 @@ def test_scanned_static_method():
 
     c = Client(method.app)
 
-    response = c.get('/static')
+    response = c.get('/static/')
     assert response.body == 'Static Method'
 
     root = method.Root()
@@ -117,7 +117,7 @@ def test_scanned_class_method():
 
     c = Client(method.app)
 
-    response = c.get('/class')
+    response = c.get('/class/')
     assert response.body == 'Class Method'
 
     root = method.Root()
@@ -236,11 +236,11 @@ def test_basic_imperative():
 
     c = Client(app)
 
-    response = c.get('/foo')
+    response = c.get('/foo/')
     assert response.body == 'The view for model: foo'
 
     response = c.get('/foo/link')
-    assert response.body == '/foo'
+    assert response.body == '/foo/'
 
     response = c.get('/foo/json')
     assert response.body == '{"id": "foo"}'
@@ -294,11 +294,11 @@ def test_basic_testing_config():
 
     c = Client(app)
 
-    response = c.get('/foo')
+    response = c.get('/foo/')
     assert response.body == 'The view for model: foo'
 
     response = c.get('/foo/link')
-    assert response.body == '/foo'
+    assert response.body == '/foo/'
 
     response = c.get('/foo/json')
     assert response.body == '{"id": "foo"}'
@@ -410,17 +410,17 @@ def test_link_with_parameters():
 
     c = Client(app)
 
-    response = c.get('/foo')
+    response = c.get('/foo/')
     assert response.body == 'The view for model: foo 0'
 
     response = c.get('/foo/link')
-    assert response.body == '/foo?param=0'
+    assert response.body == '/foo/?param=0'
 
-    response = c.get('/foo?param=1')
+    response = c.get('/foo/?param=1')
     assert response.body == 'The view for model: foo 1'
 
     response = c.get('/foo/link?param=1')
-    assert response.body == '/foo?param=1'
+    assert response.body == '/foo/?param=1'
 
 
 def test_root_link_with_parameters():
@@ -487,7 +487,7 @@ def test_implicit_variables():
     c = Client(app)
 
     response = c.get('/foo/link')
-    assert response.body == '/foo'
+    assert response.body == '/foo/'
 
 
 def test_implicit_parameters():
@@ -518,14 +518,14 @@ def test_implicit_parameters():
 
     c = Client(app)
 
-    response = c.get('/foo')
+    response = c.get('/foo/')
     assert response.body == 'The view for model: None'
-    response = c.get('/foo?id=bar')
+    response = c.get('/foo/?id=bar')
     assert response.body == 'The view for model: bar'
     response = c.get('/foo/link')
-    assert response.body == '/foo'
+    assert response.body == '/foo/'
     response = c.get('/foo/link?id=bar')
-    assert response.body == '/foo?id=bar'
+    assert response.body == '/foo/?id=bar'
 
 
 def test_implicit_parameters_default():
@@ -556,14 +556,14 @@ def test_implicit_parameters_default():
 
     c = Client(app)
 
-    response = c.get('/foo')
+    response = c.get('/foo/')
     assert response.body == 'The view for model: default'
-    response = c.get('/foo?id=bar')
+    response = c.get('/foo/?id=bar')
     assert response.body == 'The view for model: bar'
     response = c.get('/foo/link')
-    assert response.body == '/foo?id=default'
+    assert response.body == '/foo/?id=default'
     response = c.get('/foo/link?id=bar')
-    assert response.body == '/foo?id=bar'
+    assert response.body == '/foo/?id=bar'
 
 
 def test_simple_root():
@@ -608,7 +608,7 @@ def test_json_directive():
 
     c = Client(app)
 
-    response = c.get('/foo')
+    response = c.get('/foo/')
     assert response.body == '{"id": "foo"}'
 
 
@@ -948,7 +948,7 @@ def test_run_app_with_context_without_it():
 
     c = Client(app)
     with pytest.raises(MountError):
-        c.get('/foo')
+        c.get('/foo/')
 
 
 def test_mapply_bug():
